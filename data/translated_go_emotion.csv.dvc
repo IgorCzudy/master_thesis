@@ -1,0 +1,5 @@
+outs:
+- md5: d7f84bf716a675092cb2ff144bceb3e2
+  size: 61239059
+  hash: md5
+  path: translated_go_emotion.csv

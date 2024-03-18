@@ -1,0 +1,5 @@
+outs:
+- md5: 4ffa6ab35103d88aa2e777bee3eb327e
+  size: 10161190
+  hash: md5
+  path: translation_maping.json
