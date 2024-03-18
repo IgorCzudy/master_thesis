@@ -1,0 +1,5 @@
+outs:
+- md5: 8dc669c09010514adb4c71a4feb67929
+  size: 17584307
+  hash: md5
+  path: final_translation.csv
