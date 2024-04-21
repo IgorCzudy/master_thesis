@@ -53,14 +53,11 @@ def split_dataset(df):
     )
 
 
-def make_tokenizer(labels, for_english=True):
+def make_tokenizer(labels, tokenizer_name="bert-base-uncased", for_english=True):
     id2label = {idx: label for idx, label in enumerate(labels)}
     label2id = {label: idx for idx, label in enumerate(labels)}
 
-    if for_english:
-        tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    else:
-        tokenizer = AutoTokenizer.from_pretrained("allegro/herbert-base-cased")
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     return tokenizer, id2label, label2id
 
 
@@ -108,22 +105,17 @@ def compute_metrics(p: EvalPrediction):
 
 
 def train(
+    model_name,
     encoded_dataset,
     tokenizer,
     labels,
     id2label,
     label2id,
-    for_english=True,
     batch_size=16,
     learning_rate=5e-5,
     num_train_epochs=5,
     weight_decay=0.01,
 ):
-
-    if for_english:
-        model_name = "bert-base-uncased"
-    else:
-        model_name = "allegro/herbert-base-cased"
 
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
