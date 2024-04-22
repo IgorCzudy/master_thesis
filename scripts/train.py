@@ -8,7 +8,7 @@ from transformers import EvalPrediction
 import torch
 from transformers import AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
-
+import mlflow
 
 def read_data(
     for_english=True,
@@ -127,7 +127,7 @@ def train(
 
     metric_name = "f1"
     args = TrainingArguments(
-        f"{model_name}-finetuned",
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
         evaluation_strategy="epoch",
         save_strategy="epoch",
         learning_rate=learning_rate,
@@ -137,11 +137,21 @@ def train(
         weight_decay=weight_decay,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
+        raport_to=["mlflow"],
         # warmup_steps
         # logging_dir: Ścieżka do katalogu, w którym będą przechowywane dzienniki treningu, w tym miary wydajności i metryki.
         # report_to: Lista nazw zasobów, do których chcesz wysłać raporty, takie jak "wandb", "tensorboard", "mlflow", itp
         # push_to_hub=True,
     )
+
+    with mlflow.start_run():
+        mlflow.log_params({
+            "model_name": f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
+            "num_train_epochs": num_train_epochs,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "weight_decay": weight_decay,
+        })
 
     trainer = Trainer(
         model,
