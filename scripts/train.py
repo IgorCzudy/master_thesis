@@ -9,6 +9,7 @@ import torch
 from transformers import AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
 import mlflow
+import os
 
 def read_data(
     for_english=True,
@@ -30,9 +31,12 @@ def read_data(
     ]
     if for_english:
         col_to_del = ["text_pl"] + col_to_del
+        df.drop(columns=col_to_del, inplace=True)
     else:
         col_to_del = ["text"] + col_to_del
-    df.drop(columns=col_to_del, inplace=True)
+        df.drop(columns=col_to_del, inplace=True)
+        df.rename(columns={'text_pl': 'text'}, inplace=True)
+
     df = df.replace({0: False, 1: True})
     labels = df.columns.tolist()[1:]
 
@@ -61,15 +65,15 @@ def make_tokenizer(labels, tokenizer_name="bert-base-uncased", for_english=True)
     return tokenizer, id2label, label2id
 
 
-def preprocess_data(examples, tokenizer, labels, for_english=True):
-    if for_english:
-        text = examples["text"]
-    else:
-        text = examples["text_pl"]
+def preprocess_data(examples, tokenizer, labels):
+
+    text = examples["text"]
     # encode them
-    encoding = tokenizer(text, is_split_into_words=True, padding="max_length", truncation=True, max_length=128)
+    encoding = tokenizer(text, padding="max_length", truncation=True, max_length=128)
+
     # add labels
     labels_batch = {k: examples[k] for k in examples.keys() if k in labels}
+
     # create numpy array of shape (batch_size, num_labels)
     labels_matrix = np.zeros((len(text), len(labels)))
     # fill numpy array
@@ -82,7 +86,7 @@ def preprocess_data(examples, tokenizer, labels, for_english=True):
 
 
 # source: https://jesusleal.io/2021/04/21/Longformer-multilabel-classification/
-def multi_label_metrics(predictions, labels, threshold=0.5):
+def multi_label_metrics(predictions, labels, threshold=0.005):
     # first, apply sigmoid on predictions which are of shape (batch_size, num_labels)
     sigmoid = torch.nn.Sigmoid()
     probs = sigmoid(torch.Tensor(predictions))
@@ -145,15 +149,6 @@ def train(
         # push_to_hub=True,
     )
 
-    # with mlflow.start_run():
-    #     mlflow.log_params({
-    #         "model_name": f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
-    #         "num_train_epochs": num_train_epochs,
-    #         "batch_size": batch_size,
-    #         "learning_rate": learning_rate,
-    #         "weight_decay": weight_decay,
-    #     })
-
     trainer = Trainer(
         model,
         args,
@@ -191,30 +186,46 @@ def predict(
     ]
     return predicted_labels
 
-
 # if __name__ == "__main__":
-#     df, labels = read_data(for_english=True, proc_of_ds=0.005)
+
+#     FOR_ENGLISH = False
+#     TOKENIZER_NAME = "allegro/herbert-base-cased" #"bert-base-uncased"
+
+#     df, labels = read_data(for_english=FOR_ENGLISH, proc_of_ds=0.005)
 #     dataset = split_dataset(df)
 #     print(dataset.shape)
 
-#     tokenizer, id2label, label2id = make_tokenizer(labels, for_english=True)
+#     tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME, for_english=FOR_ENGLISH)
 
 #     encoded_dataset = dataset.map(
-#         lambda examples: preprocess_data(examples, tokenizer, labels, for_english=True),
+#         lambda examples: preprocess_data(examples, tokenizer, labels),
 #         batched=True,
 #         remove_columns=dataset["train"].column_names,
 #     )
-
 #     encoded_dataset.set_format("torch")
 
+#     os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
+#     os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
+
+#     mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
+
+#     mlflow.set_experiment("Polish_ds_herbert_test2")
+
 #     trainer = train(
+#         TOKENIZER_NAME,
 #         encoded_dataset,
 #         tokenizer,
 #         labels,
 #         id2label,
 #         label2id,
-#         for_english=True,
-#         batch_size=16,
+#         num_train_epochs=5,
+#         batch_size = 16)
+    
+    
+#     mlflow.pytorch.log_model(
+#         pytorch_model=trainer.model,
+#         artifact_path="test_pytorch",
+#         registered_model_name="test_pytorch",
 #     )
 
 #     trainer.evaluate()
