@@ -137,6 +137,7 @@ def train(
         weight_decay=weight_decay,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
+        run_name = f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
         raport_to=["mlflow"],
         # warmup_steps
         # logging_dir: Ścieżka do katalogu, w którym będą przechowywane dzienniki treningu, w tym miary wydajności i metryki.
@@ -144,14 +145,14 @@ def train(
         # push_to_hub=True,
     )
 
-    with mlflow.start_run():
-        mlflow.log_params({
-            "model_name": f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
-            "num_train_epochs": num_train_epochs,
-            "batch_size": batch_size,
-            "learning_rate": learning_rate,
-            "weight_decay": weight_decay,
-        })
+    # with mlflow.start_run():
+    #     mlflow.log_params({
+    #         "model_name": f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
+    #         "num_train_epochs": num_train_epochs,
+    #         "batch_size": batch_size,
+    #         "learning_rate": learning_rate,
+    #         "weight_decay": weight_decay,
+    #     })
 
     trainer = Trainer(
         model,
