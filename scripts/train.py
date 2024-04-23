@@ -41,7 +41,8 @@ def read_data(
     labels = df.columns.tolist()[1:]
 
     size = int(df.shape[0] * proc_of_ds)
-    return df.iloc[:size, :], labels
+    random_rows = df.sample(n=size, replace=False)
+    return random_rows, labels
 
 
 def split_dataset(df):
