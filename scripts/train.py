@@ -57,7 +57,7 @@ def split_dataset(df):
     )
 
 
-def make_tokenizer(labels, tokenizer_name="bert-base-uncased", for_english=True):
+def make_tokenizer(labels, tokenizer_name="bert-base-uncased"):
     id2label = {idx: label for idx, label in enumerate(labels)}
     label2id = {label: idx for idx, label in enumerate(labels)}
 
@@ -86,7 +86,7 @@ def preprocess_data(examples, tokenizer, labels):
 
 
 # source: https://jesusleal.io/2021/04/21/Longformer-multilabel-classification/
-def multi_label_metrics(predictions, labels, threshold=0.005):
+def multi_label_metrics(predictions, labels, threshold=0.5):
     # first, apply sigmoid on predictions which are of shape (batch_size, num_labels)
     sigmoid = torch.nn.Sigmoid()
     probs = sigmoid(torch.Tensor(predictions))
@@ -100,6 +100,7 @@ def multi_label_metrics(predictions, labels, threshold=0.005):
     accuracy = accuracy_score(y_true, y_pred)
     metrics = {"f1": f1_micro_average, "roc_auc": roc_auc, "accuracy": accuracy}
     return metrics
+
 
 
 def compute_metrics(p: EvalPrediction):
@@ -188,47 +189,51 @@ def predict(
 
 # if __name__ == "__main__":
 
-#     FOR_ENGLISH = False
-#     TOKENIZER_NAME = "allegro/herbert-base-cased" #"bert-base-uncased"
+    # from scripts.train import *
+    # import mlflow
+    # import os
 
-#     df, labels = read_data(for_english=FOR_ENGLISH, proc_of_ds=0.005)
-#     dataset = split_dataset(df)
-#     print(dataset.shape)
+    # FOR_ENGLISH = False
+    # TOKENIZER_NAME = "allegro/herbert-base-cased" #"bert-base-uncased"
 
-#     tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME, for_english=FOR_ENGLISH)
+    # df, labels = read_data(for_english=FOR_ENGLISH, proc_of_ds=0.5)
+    # dataset = split_dataset(df)
+    # print(dataset.shape)
 
-#     encoded_dataset = dataset.map(
-#         lambda examples: preprocess_data(examples, tokenizer, labels),
-#         batched=True,
-#         remove_columns=dataset["train"].column_names,
-#     )
-#     encoded_dataset.set_format("torch")
+    # tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME)
 
-#     os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
-#     os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
+    # encoded_dataset = dataset.map(
+    #     lambda examples: preprocess_data(examples, tokenizer, labels),
+    #     batched=True,
+    #     remove_columns=dataset["train"].column_names,
+    # )
+    # encoded_dataset.set_format("torch")
 
-#     mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
+    # os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
+    # os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
 
-#     mlflow.set_experiment("Polish_ds_herbert_test2")
+    # mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
 
-#     trainer = train(
-#         TOKENIZER_NAME,
-#         encoded_dataset,
-#         tokenizer,
-#         labels,
-#         id2label,
-#         label2id,
-#         num_train_epochs=5,
-#         batch_size = 16)
-    
-    
-#     mlflow.pytorch.log_model(
-#         pytorch_model=trainer.model,
-#         artifact_path="test_pytorch",
-#         registered_model_name="test_pytorch",
-#     )
+    # mlflow.set_experiment("Polish_ds_herbert")
 
-#     trainer.evaluate()
+    # trainer = train(
+    #     TOKENIZER_NAME,
+    #     encoded_dataset,
+    #     tokenizer,
+    #     labels,
+    #     id2label,
+    #     label2id,
+    #     num_train_epochs=5,
+    #     batch_size = 16)
 
-#     predicted_labels = predict(trainer, tokenizer, id2label)
-#     print(f"{predicted_labels=}")
+
+    # mlflow.pytorch.log_model(
+    #     pytorch_model=trainer.model,
+    #     artifact_path="herbert",
+    #     registered_model_name="herbert_polish_0.5ds",
+    # )
+
+    # trainer.evaluate()
+
+    # predicted_labels = predict(trainer, tokenizer, id2label)
+    # print(f"{predicted_labels=}")
