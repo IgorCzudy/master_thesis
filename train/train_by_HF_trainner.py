@@ -64,6 +64,7 @@ def train_easy(
     labels,
     id2label,
     label2id,
+    for_english,
     batch_size=16,
     learning_rate=5e-5,
     num_train_epochs=5,
@@ -80,7 +81,7 @@ def train_easy(
 
     metric_name = "f1_micro"
     args = TrainingArguments(
-        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
@@ -117,6 +118,7 @@ def train_lora(
     label2id,
     lora_config,
     quantization_config,
+    for_english,
     batch_size=16,
     learning_rate=5e-5,
     num_train_epochs=5,
@@ -137,7 +139,7 @@ def train_lora(
 
     metric_name = "f1_micro"
     args = TrainingArguments(
-        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-lora",
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
