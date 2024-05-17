@@ -1,4 +1,4 @@
-from tokenization import read_data, split_dataset, make_tokenizer, preprocess_data
+from .tokenization import read_data, split_dataset, make_tokenizer, preprocess_data
 import torch
 import numpy as np
 from sklearn.metrics import (
@@ -8,10 +8,16 @@ from sklearn.metrics import (
     confusion_matrix
 )
 from transformers import (
+    BitsAndBytesConfig,
     EvalPrediction,
     AutoModelForSequenceClassification,
     Trainer,
     TrainingArguments,
+)
+from peft import (
+    LoraConfig,
+    prepare_model_for_kbit_training,
+    get_peft_model
 )
 import mlflow
 import os
@@ -102,6 +108,62 @@ def train_easy(
     return trainer
 
 
+def train_lora(
+    model_name,
+    encoded_dataset,
+    tokenizer,
+    labels,
+    id2label,
+    label2id,
+    lora_config,
+    quantization_config,
+    batch_size=16,
+    learning_rate=5e-5,
+    num_train_epochs=5,
+    weight_decay=0.01,
+):
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        problem_type="multi_label_classification",
+        quantization_config=quantization_config,
+        num_labels=len(labels),
+        id2label=id2label,
+        label2id=label2id,
+    )
+    model = prepare_model_for_kbit_training(model)
+    model = get_peft_model(model, lora_config)
+    model.config.pad_token_id = tokenizer.pad_token_id
+    model.print_trainable_parameters()
+
+    metric_name = "f1_micro"
+    args = TrainingArguments(
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
+        # evaluation_strategy="steps",
+        # save_strategy="steps",
+        evaluation_strategy = "epoch",
+        save_strategy = "epoch",
+        learning_rate=learning_rate,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        num_train_epochs=num_train_epochs,
+        weight_decay=weight_decay,
+        load_best_model_at_end=True,
+        metric_for_best_model=metric_name,
+        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}",
+        report_to=["mlflow"],
+        # eval_steps = 100
+    )
+    trainer = Trainer(
+        model,
+        args,
+        train_dataset=encoded_dataset["train"],
+        eval_dataset=encoded_dataset["validation"],
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics,
+    )
+    trainer.train()
+    return trainer
+
 def predict(
     trainer,
     tokenizer,
@@ -123,34 +185,34 @@ def predict(
     ]
     return predicted_labels
 
-if __name__ == "__main__":
-    FOR_ENGLISH = False
-    PROC_OF_DS = 0.5
-    TOKENIZER_NAME = "allegro/herbert-base-cased" #"bert-base-uncased"
-    BATCH_SIZE = 64
-    LR = 5e-3
-    NUM_EPOCH = 5
-    WEIGHT_DECAY=0.01
+# if __name__ == "__main__":
+#     FOR_ENGLISH = False
+#     PROC_OF_DS = 0.5
+#     TOKENIZER_NAME = "allegro/herbert-base-cased" #"bert-base-uncased"
+#     BATCH_SIZE = 64
+#     LR = 5e-3
+#     NUM_EPOCH = 5
+#     WEIGHT_DECAY=0.01
 
-    df, labels = read_data(for_english=FOR_ENGLISH, proc_of_ds=PROC_OF_DS)
-    dataset = split_dataset(df)
-    print(dataset.shape)
+#     df, labels = read_data(for_english=FOR_ENGLISH, proc_of_ds=PROC_OF_DS)
+#     dataset = split_dataset(df)
+#     print(dataset.shape)
 
-    tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME)
+#     tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME)
 
-    encoded_dataset = dataset.map(
-        lambda examples: preprocess_data(examples, tokenizer, labels),
-        batched=True,
-        remove_columns=dataset["train"].column_names,
-    )
+#     encoded_dataset = dataset.map(
+#         lambda examples: preprocess_data(examples, tokenizer, labels),
+#         batched=True,
+#         remove_columns=dataset["train"].column_names,
+#     )
 
-    encoded_dataset.set_format("torch")
+#     encoded_dataset.set_format("torch")
 
-    os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
-    os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
-    mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
-    mlflow.set_experiment("TEST")
+#     os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
+#     os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
+#     mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
+#     mlflow.set_experiment("TEST")
 
-    trainer = train_easy(TOKENIZER_NAME,encoded_dataset,tokenizer,labels,id2label,label2id,batch_size=BATCH_SIZE,learning_rate=LR, num_train_epochs=NUM_EPOCH,weight_decay=WEIGHT_DECAY,)
-    mlflow.pytorch.log_model(trainer.model, f"saved_model_{TOKENIZER_NAME}")
+#     trainer = train_easy(TOKENIZER_NAME,encoded_dataset,tokenizer,labels,id2label,label2id,batch_size=BATCH_SIZE,learning_rate=LR, num_train_epochs=NUM_EPOCH,weight_decay=WEIGHT_DECAY,)
+#     mlflow.pytorch.log_model(trainer.model, f"saved_model_{TOKENIZER_NAME}")
 
