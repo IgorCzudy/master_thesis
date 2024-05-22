@@ -21,6 +21,8 @@ from peft import (
 )
 import mlflow
 import os
+import click
+
 
 def multi_label_metrics(predictions, labels, id2label, threshold=0.5):
     sigmoid = torch.nn.Sigmoid()
@@ -187,34 +189,75 @@ def predict(
     ]
     return predicted_labels
 
-# if __name__ == "__main__":
-#     FOR_ENGLISH = False
-#     PROC_OF_DS = 0.5
-#     TOKENIZER_NAME = "allegro/herbert-base-cased" #"bert-base-uncased"
-#     BATCH_SIZE = 64
-#     LR = 5e-3
-#     NUM_EPOCH = 5
-#     WEIGHT_DECAY=0.01
 
-#     df, labels = read_data(for_english=FOR_ENGLISH, proc_of_ds=PROC_OF_DS)
-#     dataset = split_dataset(df)
-#     print(dataset.shape)
 
-#     tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME)
+@click.command()
+@click.option('--FOR_ENGLISH', type=bool, default=False, help='Set to True if the data is in English')
+@click.option('--PROC_OF_DS', type=float, default=1, help='Proportion of the dataset to use')
+@click.option('--TOKENIZER_NAME', type=str, default="allegro/herbert-base-cased", help='Name of the tokenizer')
+@click.option('--BATCH_SIZE', type=int, default=256, help='Batch size for training')
+@click.option('--LR', type=float, default=5e-7, help='Learning rate')
+@click.option('--NUM_EPOCH', type=int, default=10, help='Number of epochs')
+@click.option('--WEIGHT_DECAY', type=float, default=0.01, help='Weight decay for optimizer')
+@click.option('--PATH', type=str, default="translated_go_emotion.csv", help='Path to the dataset')
+if __name__ == "__main__":
+    map_model_to_moduls = {
+      "allegro/herbert-base-cased": ["query", "key", "value", "dense"], #polski BERT
+      "microsoft/mdeberta-v3-base": ["query_proj","key_proj","value_proj","dense"],# dla polskiego i angielskiego
+      # "dkleczek/Polish_RoBERTa_large_OPI": ["query", "key", "value", "dense"],# polska roberta 
+      "microsoft/deberta-v3-base": ["query_proj","key_proj","value_proj","dense"], #(albo large) (dla angielskiego)
+      # "FacebookAI/xlm-roberta-base": ["query", "key", "value", "dense"], # wielojęzyczna RoBERTa 
+      "google-bert/bert-base-multilingual-cased": ["query", "key", "value", "dense"]# wielojęzyczny BERT
+    }
 
-#     encoded_dataset = dataset.map(
-#         lambda examples: preprocess_data(examples, tokenizer, labels),
-#         batched=True,
-#         remove_columns=dataset["train"].column_names,
-#     )
+    df, labels = read_data(for_english=FOR_ENGLISH, path = PATH, proc_of_ds=PROC_OF_DS)
+    dataset = split_dataset(df)
+    print(dataset.shape)
 
-#     encoded_dataset.set_format("torch")
+    tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME)
 
-#     os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
-#     os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
-#     mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
-#     mlflow.set_experiment("TEST")
+    encoded_dataset = dataset.map(
+        lambda examples: preprocess_data(examples, tokenizer, labels),
+        batched=True,
+        remove_columns=dataset["train"].column_names,
+    )
 
-#     trainer = train_easy(TOKENIZER_NAME,encoded_dataset,tokenizer,labels,id2label,label2id,batch_size=BATCH_SIZE,learning_rate=LR, num_train_epochs=NUM_EPOCH,weight_decay=WEIGHT_DECAY,)
-#     mlflow.pytorch.log_model(trainer.model, f"saved_model_{TOKENIZER_NAME}")
+    encoded_dataset.set_format("torch")
+
+    os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
+    os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
+    mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
+    mlflow.set_experiment("TEST")
+
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit = True, # enable 4-bit quantization
+        bnb_4bit_quant_type = 'nf4', # information theoretically optimal dtype for normally distributed weights
+        bnb_4bit_use_double_quant = True, # quantize quantized weights //insert xzibit meme
+        bnb_4bit_compute_dtype = torch.bfloat16 # optimized fp format for ML
+        )
+
+    lora_config = LoraConfig(
+        r = 16, # the dimension of the low-rank matrices
+        lora_alpha = 8, # scaling factor for LoRA activations vs pre-trained weight activations
+        target_modules = map_model_to_moduls[TOKENIZER_NAME], #['q_proj', 'k_proj', 'v_proj', 'o_proj'],
+        lora_dropout = 0.05, # dropout probability of the LoRA layers
+        bias = 'none', # wether to train bias weights, set to 'none' for attention layers
+        task_type = 'SEQ_CLS'
+    )
+
+    trainer = train_lora(TOKENIZER_NAME,
+                         encoded_dataset,
+                         tokenizer,
+                         labels,
+                         id2label,
+                         label2id, 
+                         lora_config, 
+                         quantization_config,
+                         for_english=FOR_ENGLISH,
+                         batch_size=BATCH_SIZE,
+                         learning_rate=LR, 
+                         num_train_epochs=NUM_EPOCH,
+                         weight_decay=WEIGHT_DECAY,)
+    
+    mlflow.pytorch.log_model(trainer.model, f"{TOKENIZER_NAME}-finetuned-number-of-epochs-{NUM_EPOCH}-batch-size-{BATCH_SIZE}-lr-{LR}-wd-{WEIGHT_DECAY}-for_english-{FOR_ENGLISH}-lora")
 
