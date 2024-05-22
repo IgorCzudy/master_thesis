@@ -192,15 +192,15 @@ def predict(
 
 
 @click.command()
-@click.option('--FOR_ENGLISH', type=bool, default=False, help='Set to True if the data is in English')
-@click.option('--PROC_OF_DS', type=float, default=1, help='Proportion of the dataset to use')
-@click.option('--TOKENIZER_NAME', type=str, default="allegro/herbert-base-cased", help='Name of the tokenizer')
-@click.option('--BATCH_SIZE', type=int, default=256, help='Batch size for training')
-@click.option('--LR', type=float, default=5e-7, help='Learning rate')
-@click.option('--NUM_EPOCH', type=int, default=10, help='Number of epochs')
-@click.option('--WEIGHT_DECAY', type=float, default=0.01, help='Weight decay for optimizer')
-@click.option('--PATH', type=str, default="translated_go_emotion.csv", help='Path to the dataset')
-def main(FOR_ENGLISH, PROC_OF_DS, TOKENIZER_NAME, BATCH_SIZE, LR, NUM_EPOCH, WEIGHT_DECAY, PATH):
+@click.option('--for_english', type=bool, default=False, help='Set to True if the data is in English')
+@click.option('--proc_of_ds', type=float, default=1, help='Proportion of the dataset to use')
+@click.option('--tokenizer_name', type=str, default="allegro/herbert-base-cased", help='Name of the tokenizer')
+@click.option('--batch_size', type=int, default=256, help='Batch size for training')
+@click.option('--lr', type=float, default=5e-7, help='Learning rate')
+@click.option('--num_epoch', type=int, default=10, help='Number of epochs')
+@click.option('--weight_decay', type=float, default=0.01, help='Weight decay for optimizer')
+@click.option('--path', type=str, default="translated_go_emotion.csv", help='Path to the dataset')
+def main(for_english, proc_of_ds, tokenizer_name, batch_size, lr, num_epoch, weight_decay, path):
     map_model_to_moduls = {
       "allegro/herbert-base-cased": ["query", "key", "value", "dense"], #polski BERT
       "microsoft/mdeberta-v3-base": ["query_proj","key_proj","value_proj","dense"],# dla polskiego i angielskiego
@@ -210,11 +210,11 @@ def main(FOR_ENGLISH, PROC_OF_DS, TOKENIZER_NAME, BATCH_SIZE, LR, NUM_EPOCH, WEI
       "google-bert/bert-base-multilingual-cased": ["query", "key", "value", "dense"]# wielojęzyczny BERT
     }
 
-    df, labels = read_data(for_english=FOR_ENGLISH, path = PATH, proc_of_ds=PROC_OF_DS)
+    df, labels = read_data(for_english=for_english, path = path, proc_of_ds=proc_of_ds)
     dataset = split_dataset(df)
     print(dataset.shape)
 
-    tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=TOKENIZER_NAME)
+    tokenizer, id2label, label2id = make_tokenizer(labels, tokenizer_name=tokenizer_name)
 
     encoded_dataset = dataset.map(
         lambda examples: preprocess_data(examples, tokenizer, labels),
@@ -239,13 +239,13 @@ def main(FOR_ENGLISH, PROC_OF_DS, TOKENIZER_NAME, BATCH_SIZE, LR, NUM_EPOCH, WEI
     lora_config = LoraConfig(
         r = 16, # the dimension of the low-rank matrices
         lora_alpha = 8, # scaling factor for LoRA activations vs pre-trained weight activations
-        target_modules = map_model_to_moduls[TOKENIZER_NAME], #['q_proj', 'k_proj', 'v_proj', 'o_proj'],
+        target_modules = map_model_to_moduls[tokenizer_name], #['q_proj', 'k_proj', 'v_proj', 'o_proj'],
         lora_dropout = 0.05, # dropout probability of the LoRA layers
         bias = 'none', # wether to train bias weights, set to 'none' for attention layers
         task_type = 'SEQ_CLS'
     )
 
-    trainer = train_lora(TOKENIZER_NAME,
+    trainer = train_lora(tokenizer_name,
                          encoded_dataset,
                          tokenizer,
                          labels,
@@ -253,13 +253,13 @@ def main(FOR_ENGLISH, PROC_OF_DS, TOKENIZER_NAME, BATCH_SIZE, LR, NUM_EPOCH, WEI
                          label2id, 
                          lora_config, 
                          quantization_config,
-                         for_english=FOR_ENGLISH,
-                         batch_size=BATCH_SIZE,
-                         learning_rate=LR, 
-                         num_train_epochs=NUM_EPOCH,
-                         weight_decay=WEIGHT_DECAY,)
+                         for_english=for_english,
+                         batch_size=batch_size,
+                         learning_rate=lr, 
+                         num_train_epochs=num_epoch,
+                         weight_decay=weight_decay,)
     
-    mlflow.pytorch.log_model(trainer.model, f"{TOKENIZER_NAME}-finetuned-number-of-epochs-{NUM_EPOCH}-batch-size-{BATCH_SIZE}-lr-{LR}-wd-{WEIGHT_DECAY}-for_english-{FOR_ENGLISH}-lora")
+    mlflow.pytorch.log_model(trainer.model, f"{tokenizer_name}-finetuned-number-of-epochs-{num_epoch}-batch-size-{batch_size}-lr-{lr}-wd-{weight_decay}-for_english-{for_english}-lora")
 
 if __name__ == "__main__":
     main()
