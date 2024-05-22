@@ -22,7 +22,7 @@ from peft import (
 import mlflow
 import os
 
-def multi_label_metrics(predictions, labels, threshold=0.5):
+def multi_label_metrics(predictions, labels, id2label, threshold=0.5):
     sigmoid = torch.nn.Sigmoid()
     probs = sigmoid(torch.Tensor(predictions))
     y_pred = np.zeros(probs.shape)
@@ -51,9 +51,9 @@ def multi_label_metrics(predictions, labels, threshold=0.5):
     return metrics
 
 
-def compute_metrics(p: EvalPrediction):
+def compute_metrics(p: EvalPrediction, id2label):
     preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
-    result = multi_label_metrics(predictions=preds, labels=p.label_ids)
+    result = multi_label_metrics(predictions=preds, labels=p.label_ids, id2label=id2label)
     return result
 
 
@@ -103,7 +103,7 @@ def train_easy(
         train_dataset=encoded_dataset["train"],
         eval_dataset=encoded_dataset["validation"],
         tokenizer=tokenizer,
-        compute_metrics=compute_metrics,
+    compute_metrics=lambda eval_pred: compute_metrics(eval_pred, idtolabel),
     )
     trainer.train()
     return trainer
@@ -161,7 +161,7 @@ def train_lora(
         train_dataset=encoded_dataset["train"],
         eval_dataset=encoded_dataset["validation"],
         tokenizer=tokenizer,
-        compute_metrics=compute_metrics,
+        compute_metrics=lambda eval_pred: compute_metrics(eval_pred, idtolabel),
     )
     trainer.train()
     return trainer
