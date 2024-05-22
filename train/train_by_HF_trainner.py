@@ -200,7 +200,7 @@ def predict(
 @click.option('--NUM_EPOCH', type=int, default=10, help='Number of epochs')
 @click.option('--WEIGHT_DECAY', type=float, default=0.01, help='Weight decay for optimizer')
 @click.option('--PATH', type=str, default="translated_go_emotion.csv", help='Path to the dataset')
-if __name__ == "__main__":
+def main(FOR_ENGLISH, PROC_OF_DS, TOKENIZER_NAME, BATCH_SIZE, LR, NUM_EPOCH, WEIGHT_DECAY, PATH):
     map_model_to_moduls = {
       "allegro/herbert-base-cased": ["query", "key", "value", "dense"], #polski BERT
       "microsoft/mdeberta-v3-base": ["query_proj","key_proj","value_proj","dense"],# dla polskiego i angielskiego
@@ -261,3 +261,5 @@ if __name__ == "__main__":
     
     mlflow.pytorch.log_model(trainer.model, f"{TOKENIZER_NAME}-finetuned-number-of-epochs-{NUM_EPOCH}-batch-size-{BATCH_SIZE}-lr-{LR}-wd-{WEIGHT_DECAY}-for_english-{FOR_ENGLISH}-lora")
 
+if __name__ == "__main__":
+    main()
