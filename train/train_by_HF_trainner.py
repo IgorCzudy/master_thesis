@@ -1,4 +1,4 @@
-from .tokenization import read_data, split_dataset, make_tokenizer, preprocess_data
+from tokenization import read_data, split_dataset, make_tokenizer, preprocess_data
 import torch
 import numpy as np
 from sklearn.metrics import (
