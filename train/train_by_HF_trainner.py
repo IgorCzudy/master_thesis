@@ -161,7 +161,7 @@ def train_lora(
         train_dataset=encoded_dataset["train"],
         eval_dataset=encoded_dataset["validation"],
         tokenizer=tokenizer,
-        compute_metrics=lambda eval_pred: compute_metrics(eval_pred, idtolabel),
+        compute_metrics=lambda eval_pred: compute_metrics(eval_pred, id2label),
     )
     trainer.train()
     return trainer
