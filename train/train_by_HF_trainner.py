@@ -95,7 +95,7 @@ def train_easy(
         weight_decay=weight_decay,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
-        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-lora",
+        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
         report_to=["mlflow"],
         # eval_steps = 100
     )
