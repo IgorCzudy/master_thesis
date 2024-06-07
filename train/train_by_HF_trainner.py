@@ -141,7 +141,7 @@ def train_lora(
 
     metric_name = "f1_micro"
     args = TrainingArguments(
-        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-lora",
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
@@ -153,7 +153,7 @@ def train_lora(
         weight_decay=weight_decay,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
-        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-lora",
+        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
         report_to=["mlflow"],
         # eval_steps = 100
     )
@@ -227,39 +227,50 @@ def main(for_english, proc_of_ds, tokenizer_name, batch_size, lr, num_epoch, wei
     os.environ['MLFLOW_TRACKING_USERNAME'] = "IgorCzudy"
     os.environ['MLFLOW_TRACKING_PASSWORD'] = "42876d647d0b11f68a0aae1c1c41bf76214e41db"
     mlflow.set_tracking_uri('https://dagshub.com/IgorCzudy/master_thesis.mlflow')
-    mlflow.set_experiment("TEST")
+    mlflow.set_experiment("TEST2")
 
-    quantization_config = BitsAndBytesConfig(
-        load_in_4bit = True, # enable 4-bit quantization
-        bnb_4bit_quant_type = 'nf4', # information theoretically optimal dtype for normally distributed weights
-        bnb_4bit_use_double_quant = True, # quantize quantized weights //insert xzibit meme
-        bnb_4bit_compute_dtype = torch.bfloat16 # optimized fp format for ML
-        )
+    # quantization_config = BitsAndBytesConfig(
+    #     load_in_4bit = True, # enable 4-bit quantization
+    #     bnb_4bit_quant_type = 'nf4', # information theoretically optimal dtype for normally distributed weights
+    #     bnb_4bit_use_double_quant = True, # quantize quantized weights //insert xzibit meme
+    #     bnb_4bit_compute_dtype = torch.bfloat16 # optimized fp format for ML
+    #     )
 
-    lora_config = LoraConfig(
-        r = 16, # the dimension of the low-rank matrices
-        lora_alpha = 8, # scaling factor for LoRA activations vs pre-trained weight activations
-        target_modules = map_model_to_moduls[tokenizer_name], #['q_proj', 'k_proj', 'v_proj', 'o_proj'],
-        lora_dropout = 0.05, # dropout probability of the LoRA layers
-        bias = 'none', # wether to train bias weights, set to 'none' for attention layers
-        task_type = 'SEQ_CLS'
-    )
-
-    trainer = train_lora(tokenizer_name,
-                         encoded_dataset,
-                         tokenizer,
-                         labels,
-                         id2label,
-                         label2id, 
-                         lora_config, 
-                         quantization_config,
-                         for_english=for_english,
-                         batch_size=batch_size,
-                         learning_rate=lr, 
-                         num_train_epochs=num_epoch,
-                         weight_decay=weight_decay,)
+    # lora_config = LoraConfig(
+    #     r = 16, # the dimension of the low-rank matrices
+    #     lora_alpha = 8, # scaling factor for LoRA activations vs pre-trained weight activations
+    #     target_modules = map_model_to_moduls[tokenizer_name], #['q_proj', 'k_proj', 'v_proj', 'o_proj'],
+    #     lora_dropout = 0.05, # dropout probability of the LoRA layers
+    #     bias = 'none', # wether to train bias weights, set to 'none' for attention layers
+    #     task_type = 'SEQ_CLS'
+    # )
+    trainer = train_easy(
+                tokenizer_name,
+                encoded_dataset,
+                tokenizer,
+                labels,
+                id2label,
+                label2id,
+                for_english=for_english,
+                batch_size=batch_size,
+                learning_rate=lr, 
+                num_train_epochs=num_epoch,
+                weight_decay=weight_decay)
+    # trainer = train_lora(tokenizer_name,
+    #                      encoded_dataset,
+    #                      tokenizer,
+    #                      labels,
+    #                      id2label,
+    #                      label2id, 
+    #                      lora_config, 
+    #                      quantization_config,
+    #                      for_english=for_english,
+    #                      batch_size=batch_size,
+    #                      learning_rate=lr, 
+    #                      num_train_epochs=num_epoch,
+    #                      weight_decay=weight_decay,)
     
-    mlflow.pytorch.log_model(trainer.model, f"{tokenizer_name}-finetuned-number-of-epochs-{num_epoch}-batch-size-{batch_size}-lr-{lr}-wd-{weight_decay}-for_english-{for_english}-lora")
+    mlflow.pytorch.log_model(trainer.model, f"{tokenizer_name}-finetuned-number-of-epochs-{num_epoch}-batch-size-{batch_size}-lr-{lr}-wd-{weight_decay}-for_english-{for_english}")
 
 if __name__ == "__main__":
     main()
