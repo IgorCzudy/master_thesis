@@ -96,10 +96,3 @@ def preprocess_data(examples, tokenizer, labels):
     encoding["labels"] = labels_matrix.tolist()
     return encoding
 
-
-read_data(
-    for_english = False,
-    for_both= True,
-    path="data/translated_go_emotion.csv",
-    proc_of_ds=1,
-)
