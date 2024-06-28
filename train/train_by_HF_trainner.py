@@ -201,7 +201,7 @@ def predict(
 @click.option('--num_epoch', type=int, default=10, help='Number of epochs')
 @click.option('--weight_decay', type=float, default=0.01, help='Weight decay for optimizer')
 @click.option('--path', type=str, default="translated_go_emotion.csv", help='Path to the dataset')
-def main(for_english, proc_of_ds, tokenizer_name, batch_size, lr, num_epoch, weight_decay, path):
+def main(for_english, for_both, proc_of_ds, tokenizer_name, batch_size, lr, num_epoch, weight_decay, path):
     map_model_to_moduls = {
       "allegro/herbert-base-cased": ["query", "key", "value", "dense"], #polski BERT
       "microsoft/mdeberta-v3-base": ["query_proj","key_proj","value_proj","dense"],# dla polskiego i angielskiego
