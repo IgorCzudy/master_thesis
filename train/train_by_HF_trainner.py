@@ -193,6 +193,7 @@ def predict(
 
 @click.command()
 @click.option('--for_english', type=bool, default=False, help='Set to True if the data is in English')
+@click.option('--for_both', type=bool, default=False, help='Set to True if the data is in English')
 @click.option('--proc_of_ds', type=float, default=1, help='Proportion of the dataset to use')
 @click.option('--tokenizer_name', type=str, default="allegro/herbert-base-cased", help='Name of the tokenizer')
 @click.option('--batch_size', type=int, default=256, help='Batch size for training')
@@ -210,7 +211,7 @@ def main(for_english, proc_of_ds, tokenizer_name, batch_size, lr, num_epoch, wei
       "google-bert/bert-base-multilingual-cased": ["query", "key", "value", "dense"]# wielojęzyczny BERT
     }
 
-    df, labels = read_data(for_english=for_english, path = path, proc_of_ds=proc_of_ds)
+    df, labels = read_data(for_english=for_english, for_both=for_both, path = path, proc_of_ds=proc_of_ds)
     dataset = split_dataset(df)
     print(dataset.shape)
 
@@ -270,7 +271,7 @@ def main(for_english, proc_of_ds, tokenizer_name, batch_size, lr, num_epoch, wei
     #                      num_train_epochs=num_epoch,
     #                      weight_decay=weight_decay,)
     
-    mlflow.pytorch.log_model(trainer.model, f"{tokenizer_name}-finetuned-number-of-epochs-{num_epoch}-batch-size-{batch_size}-lr-{lr}-wd-{weight_decay}-for_english-{for_english}")
+    mlflow.pytorch.log_model(trainer.model, f"{tokenizer_name}-finetuned-number-of-epochs-{num_epoch}-batch-size-{batch_size}-lr-{lr}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}")
 
 if __name__ == "__main__":
     main()
