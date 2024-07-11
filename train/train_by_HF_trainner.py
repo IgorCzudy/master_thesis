@@ -67,6 +67,7 @@ def train_easy(
     id2label,
     label2id,
     for_english,
+    for_both,
     batch_size=16,
     learning_rate=5e-5,
     num_train_epochs=5,
@@ -121,6 +122,7 @@ def train_lora(
     lora_config,
     quantization_config,
     for_english,
+    for_both,
     batch_size=16,
     learning_rate=5e-5,
     num_train_epochs=5,
@@ -141,11 +143,11 @@ def train_lora(
 
     metric_name = "f1_micro"
     args = TrainingArguments(
-        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
-        save_strategy = "epoch",
+        save_strategy = "no",
         learning_rate=learning_rate,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -153,7 +155,7 @@ def train_lora(
         weight_decay=weight_decay,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
-        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
+        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         report_to=["mlflow"],
         # eval_steps = 100
     )
@@ -253,6 +255,7 @@ def main(for_english, for_both, proc_of_ds, tokenizer_name, batch_size, lr, num_
                 id2label,
                 label2id,
                 for_english=for_english,
+                for_both=for_both,
                 batch_size=batch_size,
                 learning_rate=lr, 
                 num_train_epochs=num_epoch,
