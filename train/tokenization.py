@@ -96,3 +96,16 @@ def preprocess_data(examples, tokenizer, labels):
     encoding["labels"] = labels_matrix.tolist()
     return encoding
 
+
+
+# df, labels = read_data(
+#     for_english = False,
+#     for_both = False,
+#     path="data/translated_go_emotion.csv",
+#     proc_of_ds=1,
+# )
+
+# df = split_dataset(df)
+
+# df = pd.DataFrame(df['test'])
+# df.to_csv('tmp.csv', index=False)
