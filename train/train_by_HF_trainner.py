@@ -59,6 +59,7 @@ def compute_metrics(p: EvalPrediction, id2label):
     return result
 
 
+
 def train_easy(
     model_name,
     encoded_dataset,
@@ -84,11 +85,11 @@ def train_easy(
 
     metric_name = "f1_micro"
     args = TrainingArguments(
-        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
+        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
-        save_strategy = "epoch",
+        save_strategy = "no",
         learning_rate=learning_rate,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -96,7 +97,7 @@ def train_easy(
         weight_decay=weight_decay,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
-        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}",
+        run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         report_to=["mlflow"],
         # eval_steps = 100
     )
@@ -108,6 +109,7 @@ def train_easy(
         tokenizer=tokenizer,
     compute_metrics=lambda eval_pred: compute_metrics(eval_pred, id2label),
     )
+    
     trainer.train()
     return trainer
 
