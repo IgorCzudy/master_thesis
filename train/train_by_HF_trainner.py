@@ -89,7 +89,7 @@ def train_easy(
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
-        save_strategy = "no",
+        save_strategy = "epoch",
         learning_rate=learning_rate,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -99,6 +99,7 @@ def train_easy(
         metric_for_best_model=metric_name,
         run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         report_to=["mlflow"],
+        output_dir="/workspace/models"
         # eval_steps = 100
     )
     trainer = Trainer(
