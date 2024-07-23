@@ -85,7 +85,7 @@ def train_easy(
 
     metric_name = "f1_micro"
     args = TrainingArguments(
-        f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
+    output_dir=f"/workspace/models/{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         # evaluation_strategy="steps",
         # save_strategy="steps",
         evaluation_strategy = "epoch",
@@ -99,7 +99,7 @@ def train_easy(
         metric_for_best_model=metric_name,
         run_name=f"{model_name}-finetuned-number-of-epochs-{num_train_epochs}-batch-size-{batch_size}-lr-{learning_rate}-wd-{weight_decay}-for_english-{for_english}-for_both-{for_both}",
         report_to=["mlflow"],
-        output_dir="/workspace/models"
+        # output_dir="/workspace/models"
         # eval_steps = 100
     )
     trainer = Trainer(
